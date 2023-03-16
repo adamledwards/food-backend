@@ -10,11 +10,27 @@ datasource db {
   url      = env("DATABASE_URL")
 }
 
-model Person {
-  id         String   @id @default(uuid())
-  createdAt  DateTime @default(now())
-  externalId String
-  updatedAt  DateTime
-  firstName  String
-  lastName   String
+model List {
+  id        String   @id @default(uuid())
+  createdAt DateTime @default(now())
+  items     Item[]
+  user      User     @relation(fields: [userId], references: [id])
+  userId    String
+}
+
+model Item {
+  id        String   @id @default(uuid())
+  createdAt DateTime @default(now())
+  item String
+  order Int?
+
+  list   List   @relation(fields: [listId], references: [id])
+  listId String
+}
+
+model User {
+  id    String @id @default(uuid())
+  email String @unique
+
+  list List[]
 }
