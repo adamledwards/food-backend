@@ -1,11 +1,13 @@
 import buildApp from '~/api/app'
-import shoppingListRoutes from '~/api/components/shopping-list/routes'
+import shoppingListRoutes from '~/api/components/shoppingList/shoppingList.routes'
 
 if (!(typeof process.env.AUTH_DOMAIN === 'string')) {
   throw new Error('Mis config')
 }
+
 const app = buildApp({
-  allowedDomains: [process.env.AUTH_DOMAIN]
+  allowedDomains: [process.env.AUTH_DOMAIN],
+  logger: true
 })
 app.register(shoppingListRoutes, {
   prefix: 'shopping-list'
