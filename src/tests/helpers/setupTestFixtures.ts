@@ -3,6 +3,7 @@ import nock from 'nock'
 import { createPublicKey, generateKeyPairSync } from 'node:crypto'
 import { beforeEach } from 'vitest'
 import buildApp from '~/api/app'
+import { db } from '~/api/db'
 
 const { privateKey, publicKey } = generateKeyPairSync('rsa', {
   modulusLength: 2048,
@@ -28,6 +29,7 @@ const signer = createSigner({
 const publicKeyJwk = createPublicKey(publicKey).export({ format: 'jwk' })
 
 nock('https://auth')
+  .persist()
   .get('/.well-known/jwks.json')
   .reply(200, {
     keys: [{
@@ -40,11 +42,13 @@ nock('https://auth')
     }]
   })
 
-beforeEach((ctx) => {
+beforeEach(async (ctx) => {
+  await db.$queryRawUnsafe('TRUNCATE TABLE "User" CASCADE')
   ctx.getToken = (scope: string[] = []) => {
-    return signer({ first_name: 'Test', last_name: 'User', scope: scope.join(' ') })
+    return signer({ first_name: 'Test', last_name: 'User', email: 'testuser@example.com', scope: scope.join(' ') })
   }
   ctx.app = buildApp({
-    allowedDomains: ['https://auth']
+    allowedDomains: ['https://auth'],
+    logger: false
   })
 })
