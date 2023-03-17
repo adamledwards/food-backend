@@ -25,7 +25,7 @@ async function main(): Promise<void> {
         CREATE DATABASE ${testDatabase}_test;
     `)
 
-  const migrate = spawn(`DATABASE_URL=${testConnectionString} npx prisma migrate dev`, { shell: true })
+  const migrate = spawn(`DATABASE_URL=${testConnectionString} npx prisma db push`, { shell: true })
 
   migrate.stdout.on('data', (data: string) => {
     process.stdout.write(data)
