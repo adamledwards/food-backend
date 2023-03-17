@@ -2,7 +2,10 @@
   "typescript": {
     "semiColons": "asi",
     "quoteStyle": "preferSingle",
-    "trailingCommas": "never"
+    "trailingCommas": "never",
+    "operatorPosition": "sameLine",
+    "typeLiteral.separatorKind.multiLine": "semiColon",
+    "typeLiteral.separatorKind.singleLine": "comma"
   },
   "json": {},
   "markdown": {},

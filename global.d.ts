@@ -15,7 +15,11 @@ declare module '@vitest/runner' {
     app: FastifyInstance
   }
 }
-
+declare module '@fastify/jwt' {
+  interface FastifyJWT {
+    user: { sub: string, email?: string }
+  }
+}
 declare module 'fastify' {
   export interface FastifyTypebox extends
     FastifyInstance<
@@ -26,6 +30,10 @@ declare module 'fastify' {
       TypeBoxTypeProvider
     >
   {}
+
+  interface FastifyRequest {
+    userId: string
+  }
 }
 
 declare global {
@@ -33,5 +41,11 @@ declare global {
     interface process {
       AUTH_DOMAIN?: string
     }
+  }
+}
+
+declare module 'pg-connection-string' {
+  interface ConnectionOptions {
+    schema?: string
   }
 }

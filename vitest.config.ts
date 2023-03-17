@@ -4,6 +4,10 @@ import { defineConfig } from 'vitest/config'
 export default defineConfig({
   plugins: [tsconfigPaths()],
   test: {
-    setupFiles: ['./src/setupTestFixtures']
+    coverage: {
+      provider: 'c8'
+    },
+    setupFiles: ['./src/tests/helpers/setupTestFixtures', './src/tests/helpers/setupPrismaClient'],
+    threads: false
   }
 })
