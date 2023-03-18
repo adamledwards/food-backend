@@ -24,7 +24,7 @@
     "@fastify/type-provider-typebox": "^2.4.0",
     "@prisma/client": "^4.11.0",
     "@sinclair/typebox": "^0.25.24",
-    "dprint": "^0.34.5",
+    "dprint": "^0.35.3",
     "fastify": "^4.13.0",
     "fastify-guard": "^2.0.0",
     "get-jwks": "^8.0.3"
