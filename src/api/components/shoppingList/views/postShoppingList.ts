@@ -1,5 +1,6 @@
+import type { Prisma } from '@prisma/client'
 import type { Static } from '@sinclair/typebox'
-import type { FastifyReply, FastifyRequest, RouteShorthandOptions } from 'fastify'
+import type { FastifyReplyWithPayload, FastifyRequest, RouteShorthandOptions } from 'fastify'
 import { db } from '~/api/db'
 import {
   ShoppingListInputBodySchema,
@@ -24,28 +25,50 @@ export const postShoppingListRouteOptions: RouteShorthandOptions = {
 export interface ShoppingListPostRouteOptions {
   Params: Static<typeof ShoppingListParamSchema>
   Body: Static<typeof ShoppingListInputBodySchema>
+  Reply: Prisma.ListGetPayload<typeof listWithItems>
 }
 
 export async function postShoppingList(
   request: FastifyRequest<ShoppingListPostRouteOptions>,
-  reply: FastifyReply
+  reply: FastifyReplyWithPayload<Prisma.ListGetPayload<typeof listWithItems>>
 ): Promise<void> {
   const { shoppingListId } = request.params
   const jsonBody = request.body
 
-  const shoppingList = await db.list.update({
+  const list = await db.list.findFirstOrThrow({
     where: {
+      userId: request.userId,
       id: shoppingListId
     },
+    select: {
+      id: true
+    }
+  })
 
+  // Research best practices regarding this as data geows
+  const { _max } = await db.item.aggregate({
+    where: {
+      listId: list.id
+    },
+    _max: {
+      order: true
+    }
+  })
+  const max = _max.order ?? 0
+
+  const shoppingList = await db.list.update({
+    where: {
+      id: list.id
+    },
     data: {
       items: {
         createMany: {
-          data: jsonBody.items.map(({ item, order }) => ({ item, order }))
+          data: jsonBody.items.map(({ item }, i) => ({ item, order: max + i + 1 }))
         }
       }
     },
     ...listWithItems
   })
+
   void reply.send(shoppingList)
 }

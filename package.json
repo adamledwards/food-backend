@@ -9,7 +9,7 @@
     "test": "npm run dev:start:db && npm run test:setup:db && vitest",
     "test:setup:db": "./scripts/setup-test-db.sh",
     "test:ci": "vitest",
-    "dev": "npm dev:start:db && DEBUG=prisma:* nodemon --watch './**/*.ts' --exec 'ts-node' -r tsconfig-paths/register --files src/index.ts",
+    "dev": "npm run dev:start:db && nodemon --watch './**/*.ts' --exec 'ts-node' -r tsconfig-paths/register --files src/index.ts",
     "dev:start:db": "./scripts/start-db.sh",
     "lint": "npm run lint:source && npm run lint:ts",
     "lint:source": "eslint --ext .js --ext .ts --ext .mjs --ext .mts --max-warnings 0 .",

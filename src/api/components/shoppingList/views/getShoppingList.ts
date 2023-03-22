@@ -1,5 +1,5 @@
 import { Prisma } from '@prisma/client'
-import type { FastifyReply, FastifyRequest, RouteShorthandOptions } from 'fastify'
+import type { FastifyReplyWithPayload, FastifyRequest, RouteShorthandOptions } from 'fastify'
 import { db } from '~/api/db'
 import { ShoppingListResponseSchema } from '../shoppingList.schema'
 import { listWithItems } from '../shoppingList.service'
@@ -15,14 +15,20 @@ export const getShoppingListRouteOptions: RouteShorthandOptions = {
   }
 }
 
-export async function getShoppingList(request: FastifyRequest, reply: FastifyReply): Promise<void> {
-  let shoppingList: Prisma.ListGetPayload<typeof listWithItems> | undefined
+type ShoppingList = Prisma.ListGetPayload<typeof listWithItems>
+
+export async function getShoppingList(
+  request: FastifyRequest,
+  reply: FastifyReplyWithPayload<ShoppingList>
+): Promise<void> {
+  let shoppingList: ShoppingList | undefined
 
   try {
     shoppingList = await db.list.findFirstOrThrow({
       where: {
         userId: request.userId
       },
+
       ...listWithItems
     })
   } catch (err) {
@@ -36,5 +42,5 @@ export async function getShoppingList(request: FastifyRequest, reply: FastifyRep
     }
   }
 
-  void reply.send(shoppingList ?? {})
+  void reply.send(shoppingList)
 }
