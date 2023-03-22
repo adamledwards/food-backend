@@ -3,7 +3,8 @@ import type {
   FastifyInstance,
   RawReplyDefaultExpression,
   RawRequestDefaultExpression,
-  RawServerDefault
+  RawServerDefault,
+  RouteGenericInterface
 } from 'fastify'
 
 import type { TypeBoxTypeProvider } from '@fastify/type-provider-typebox'
@@ -20,6 +21,8 @@ declare module '@fastify/jwt' {
     user: { sub: string, email?: string }
   }
 }
+
+type ReplyTypePayload<T> = T extends RouteGenericInterface ? T['Reply'] : T
 declare module 'fastify' {
   export interface FastifyTypebox extends
     FastifyInstance<
@@ -28,6 +31,19 @@ declare module 'fastify' {
       RawReplyDefaultExpression<RawServerDefault>,
       FastifyBaseLogger,
       TypeBoxTypeProvider
+    >
+  {}
+
+  export interface FastifyReplyWithPayload<ReplyType> extends
+    FastifyReply<
+      RawServerDefault,
+      RawRequestDefaultExpression<RawServerDefault>,
+      RawReplyDefaultExpression<RawServerDefault>,
+      RouteGenericInterface,
+      unknown,
+      FastifySchema,
+      TypeBoxTypeProvider,
+      ReplyTypePayload<ReplyType>
     >
   {}
 

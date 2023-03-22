@@ -22,10 +22,12 @@ model Item {
   id        String   @id @default(uuid())
   createdAt DateTime @default(now())
   item String
-  order Int?
+  order Int
 
   list   List   @relation(fields: [listId], references: [id])
   listId String
+
+  checked Boolean @default(false)
 }
 
 model User {

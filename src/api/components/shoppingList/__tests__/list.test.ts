@@ -1,7 +1,9 @@
+import type { Prisma } from '@prisma/client'
 import { beforeEach, describe, expect, test } from 'vitest'
 
 import shoppingListRoutes from '~/api/components/shoppingList/shoppingList.routes'
 import { db } from '~/api/db'
+import { listWithItems } from '../shoppingList.service'
 
 describe('shoping-list', () => {
   beforeEach(({ app }) => {
@@ -157,8 +159,9 @@ describe('shoping-list', () => {
         },
         payload: {
           items: [{
-            item: 'Bread',
-            order: 1
+            item: 'Bread'
+          }, {
+            item: 'Milk'
           }]
         }
       })
@@ -166,12 +169,225 @@ describe('shoping-list', () => {
         {
           id: list.id,
           createdAt: list.createdAt.toISOString(),
-          items: [{
-            item: 'Bread',
-            order: 1
-          }]
+          items: [
+            {
+              item: 'Bread',
+              order: 1
+            },
+            {
+              item: 'Milk',
+              order: 2
+            }
+          ]
         }
       )
+    })
+
+    describe('update list item', () => {
+      interface LocalTestContext {
+        shoppingListId: string
+        shoppingList: Prisma.ListGetPayload<typeof listWithItems>
+      }
+      beforeEach<LocalTestContext>(async (ctx) => {
+        const shoppingList = await db.list.update({
+          where: {
+            id: ctx.shoppingListId
+          },
+          data: {
+            items: {
+              createMany: {
+                data: [
+                  {
+                    item: 'Bread',
+                    order: 1
+                  },
+                  {
+                    item: 'Milk',
+                    order: 2
+                  },
+                  {
+                    item: 'Rice',
+                    order: 3
+                  }
+                ]
+              }
+            }
+          },
+          ...listWithItems
+        })
+        ctx.shoppingList = shoppingList
+      })
+
+      test<LocalTestContext>('returns 403 if permission are incorrect', async ({ app, getToken, shoppingList }) => {
+        const breadItem = shoppingList.items[0]
+        const response = await app.inject({
+          method: 'PUT',
+          url: `/${shoppingList.id}`,
+          headers: {
+            authorization: `Bearer ${getToken(['update:shopping-list'])}`
+          },
+          payload: {
+            id: breadItem.id,
+            data: {
+              item: 'Brown Bread'
+            }
+          }
+        })
+
+        expect(response.statusCode).toBe(403)
+      })
+
+      test<LocalTestContext>('updates an item to the list', async ({ app, getToken, shoppingList }) => {
+        const breadItem = shoppingList.items[0]
+        const response = await app.inject({
+          method: 'PUT',
+          url: `/${shoppingList.id}`,
+          headers: {
+            authorization: `Bearer ${getToken(['read:shopping-list', 'update:shopping-list'])}`
+          },
+          payload: {
+            id: breadItem.id,
+            data: {
+              item: 'Brown Bread'
+            }
+          }
+        })
+
+        expect(response.json()).toMatchObject(
+          {
+            id: shoppingList.id,
+            createdAt: shoppingList.createdAt.toISOString(),
+            items: [
+              {
+                item: 'Brown Bread',
+                order: 1
+              },
+              {
+                item: 'Milk',
+                order: 2
+              },
+              {
+                item: 'Rice',
+                order: 3
+              }
+            ]
+          }
+        )
+      })
+
+      describe('reorder item', () => {
+        test<LocalTestContext>('move item to the top of the list', async ({ app, getToken, shoppingList }) => {
+          const riceItem = shoppingList.items[2]
+          const response = await app.inject({
+            method: 'PUT',
+            url: `/${shoppingList.id}`,
+            headers: {
+              authorization: `Bearer ${getToken(['read:shopping-list', 'update:shopping-list'])}`
+            },
+            payload: {
+              id: riceItem.id,
+              data: {
+                order: 1
+              }
+            }
+          })
+
+          expect(response.json()).toMatchObject(
+            {
+              id: shoppingList.id,
+              createdAt: shoppingList.createdAt.toISOString(),
+              items: [
+                {
+                  item: 'Rice',
+                  order: 1
+                },
+                {
+                  item: 'Bread',
+                  order: 2
+                },
+                {
+                  item: 'Milk',
+                  order: 3
+                }
+              ]
+            }
+          )
+        })
+        test<LocalTestContext>('move item to the bottom of the list', async ({ app, getToken, shoppingList }) => {
+          const breadItem = shoppingList.items[0]
+          const response = await app.inject({
+            method: 'PUT',
+            url: `/${shoppingList.id}`,
+            headers: {
+              authorization: `Bearer ${getToken(['read:shopping-list', 'update:shopping-list'])}`
+            },
+            payload: {
+              id: breadItem.id,
+              data: {
+                order: 3
+              }
+            }
+          })
+
+          expect(response.json()).toMatchObject(
+            {
+              id: shoppingList.id,
+              createdAt: shoppingList.createdAt.toISOString(),
+              items: [
+                {
+                  item: 'Milk',
+                  order: 1
+                },
+                {
+                  item: 'Rice',
+                  order: 2
+                },
+                {
+                  item: 'Bread',
+                  order: 3
+                }
+              ]
+            }
+          )
+        })
+        test<LocalTestContext>('move item to the middle of the list', async ({ app, getToken, shoppingList }) => {
+          const breadItem = shoppingList.items[0]
+          const response = await app.inject({
+            method: 'PUT',
+            url: `/${shoppingList.id}`,
+            headers: {
+              authorization: `Bearer ${getToken(['read:shopping-list', 'update:shopping-list'])}`
+            },
+            payload: {
+              id: breadItem.id,
+              data: {
+                order: 2
+              }
+            }
+          })
+
+          expect(response.json()).toMatchObject(
+            {
+              id: shoppingList.id,
+              createdAt: shoppingList.createdAt.toISOString(),
+              items: [
+                {
+                  item: 'Milk',
+                  order: 1
+                },
+                {
+                  item: 'Bread',
+                  order: 2
+                },
+                {
+                  item: 'Rice',
+                  order: 3
+                }
+              ]
+            }
+          )
+        })
+      })
     })
   })
 })

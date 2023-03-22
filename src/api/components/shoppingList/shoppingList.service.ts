@@ -5,6 +5,9 @@ export const listWithItems = Prisma.validator<Prisma.ListArgs>()({
     id: true,
     createdAt: true,
     items: {
+      orderBy: {
+        order: 'asc'
+      },
       select: {
         id: true,
         order: true,

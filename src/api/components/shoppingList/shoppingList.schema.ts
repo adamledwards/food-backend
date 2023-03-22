@@ -6,7 +6,7 @@ export const ShoppingListResponseSchema = Type.Object({
   items: Type.Array(Type.Object({
     id: Type.String(),
     item: Type.String(),
-    order: Type.Integer()
+    order: Type.Union([Type.Integer(), Type.Null()])
   }))
 })
 
@@ -17,6 +17,18 @@ export const ShoppingListInputBodySchema = Type.Object({
   }))
 })
 
+export const ShoppingListUpdateInputBodySchema = Type.Object({
+  id: Type.String(),
+  data: Type.Object({
+    item: Type.Optional(Type.String()),
+    order: Type.Optional(Type.Number())
+  })
+})
+
 export const ShoppingListParamSchema = Type.Object({
+  shoppingListId: Type.String()
+})
+
+export const ShoppingListItemParamSchema = Type.Object({
   shoppingListId: Type.String()
 })
