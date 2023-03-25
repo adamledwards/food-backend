@@ -25,10 +25,6 @@ export const ShoppingListUpdateInputBodySchema = Type.Object({
   })
 })
 
-export const ShoppingListParamSchema = Type.Object({
-  shoppingListId: Type.String()
-})
-
 export const ShoppingListItemParamSchema = Type.Object({
-  shoppingListId: Type.String()
+  itemId: Type.String()
 })

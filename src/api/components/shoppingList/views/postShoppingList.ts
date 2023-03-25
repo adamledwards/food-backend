@@ -2,16 +2,11 @@ import type { Prisma } from '@prisma/client'
 import type { Static } from '@sinclair/typebox'
 import type { FastifyReplyWithPayload, FastifyRequest, RouteShorthandOptions } from 'fastify'
 import { db } from '~/api/db'
-import {
-  ShoppingListInputBodySchema,
-  ShoppingListParamSchema,
-  ShoppingListResponseSchema
-} from '../shoppingList.schema'
-import { listWithItems } from '../shoppingList.service'
+import { ShoppingListInputBodySchema, ShoppingListResponseSchema } from '../shoppingList.schema'
+import { findOrCreateShoppingList, listWithItems } from '../shoppingList.service'
 
 export const postShoppingListRouteOptions: RouteShorthandOptions = {
   schema: {
-    params: ShoppingListParamSchema,
     response: {
       200: ShoppingListResponseSchema
     },
@@ -23,7 +18,6 @@ export const postShoppingListRouteOptions: RouteShorthandOptions = {
 }
 
 export interface ShoppingListPostRouteOptions {
-  Params: Static<typeof ShoppingListParamSchema>
   Body: Static<typeof ShoppingListInputBodySchema>
   Reply: Prisma.ListGetPayload<typeof listWithItems>
 }
@@ -32,23 +26,13 @@ export async function postShoppingList(
   request: FastifyRequest<ShoppingListPostRouteOptions>,
   reply: FastifyReplyWithPayload<Prisma.ListGetPayload<typeof listWithItems>>
 ): Promise<void> {
-  const { shoppingListId } = request.params
+  const shoppingListId = await findOrCreateShoppingList(request.userId)
   const jsonBody = request.body
-
-  const list = await db.list.findFirstOrThrow({
-    where: {
-      userId: request.userId,
-      id: shoppingListId
-    },
-    select: {
-      id: true
-    }
-  })
 
   // Research best practices regarding this as data geows
   const { _max } = await db.item.aggregate({
     where: {
-      listId: list.id
+      listId: shoppingListId
     },
     _max: {
       order: true
@@ -58,7 +42,7 @@ export async function postShoppingList(
 
   const shoppingList = await db.list.update({
     where: {
-      id: list.id
+      id: shoppingListId
     },
     data: {
       items: {

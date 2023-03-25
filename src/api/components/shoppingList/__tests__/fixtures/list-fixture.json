@@ -1,0 +1,20 @@
+{
+  "id": "379faf67-4cd4-4b78-984e-81d297cd01d5",
+  "userId": "852046c8-05a9-479c-8447-7693c544fd32",
+  "items": {
+    "create": [
+      {
+        "item": "Bread",
+        "order": 1
+      },
+      {
+        "item": "Milk",
+        "order": 2
+      },
+      {
+        "item": "Rice",
+        "order": 3
+      }
+    ]
+  }
+}
