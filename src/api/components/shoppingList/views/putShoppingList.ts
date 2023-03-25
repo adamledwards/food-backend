@@ -3,16 +3,11 @@ import type { Static } from '@sinclair/typebox'
 import type { FastifyReplyWithPayload, FastifyRequest, RouteShorthandOptions } from 'fastify'
 
 import { db } from '~/api/db'
-import {
-  ShoppingListParamSchema,
-  ShoppingListResponseSchema,
-  ShoppingListUpdateInputBodySchema
-} from '../shoppingList.schema'
-import { listWithItems } from '../shoppingList.service'
+import { ShoppingListResponseSchema, ShoppingListUpdateInputBodySchema } from '../shoppingList.schema'
+import { findOrCreateShoppingList, listWithItems } from '../shoppingList.service'
 
 export const putShoppingListRouteOptions: RouteShorthandOptions = {
   schema: {
-    params: ShoppingListParamSchema,
     response: {
       200: ShoppingListResponseSchema
     },
@@ -24,7 +19,6 @@ export const putShoppingListRouteOptions: RouteShorthandOptions = {
 }
 
 export interface ShoppingListPutRouteOptions {
-  Params: Static<typeof ShoppingListParamSchema>
   Body: Static<typeof ShoppingListUpdateInputBodySchema>
   Reply: Prisma.ListGetPayload<typeof listWithItems>
 }
@@ -33,13 +27,12 @@ export async function putShoppingList(
   request: FastifyRequest<ShoppingListPutRouteOptions>,
   reply: FastifyReplyWithPayload<ShoppingListPutRouteOptions>
 ): Promise<void> {
-  const { shoppingListId } = request.params
+  const shoppingListId = await findOrCreateShoppingList(request.userId)
   const { id, data: { item, order } } = request.body
 
   const list = await db.list.findFirstOrThrow({
     where: {
-      id: shoppingListId,
-      userId: request.userId
+      id: shoppingListId
     },
     select: {
       id: true,
@@ -90,7 +83,7 @@ export async function putShoppingList(
 
   const shoppingList = await db.list.findFirstOrThrow({
     where: {
-      userId: request.userId
+      id: shoppingListId
     },
     ...listWithItems
   })

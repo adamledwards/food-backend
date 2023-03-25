@@ -1,8 +1,8 @@
-import { Prisma } from '@prisma/client'
+import type { Prisma } from '@prisma/client'
 import type { FastifyReplyWithPayload, FastifyRequest, RouteShorthandOptions } from 'fastify'
 import { db } from '~/api/db'
 import { ShoppingListResponseSchema } from '../shoppingList.schema'
-import { listWithItems } from '../shoppingList.service'
+import { findOrCreateShoppingList, listWithItems } from '../shoppingList.service'
 
 export const getShoppingListRouteOptions: RouteShorthandOptions = {
   schema: {
@@ -21,26 +21,14 @@ export async function getShoppingList(
   request: FastifyRequest,
   reply: FastifyReplyWithPayload<ShoppingList>
 ): Promise<void> {
-  let shoppingList: ShoppingList | undefined
+  const shoppingListId = await findOrCreateShoppingList(request.userId)
+  const shoppingList = await db.list.findFirstOrThrow({
+    where: {
+      id: shoppingListId
+    },
 
-  try {
-    shoppingList = await db.list.findFirstOrThrow({
-      where: {
-        userId: request.userId
-      },
-
-      ...listWithItems
-    })
-  } catch (err) {
-    if (err instanceof Prisma.PrismaClientKnownRequestError && err.code === 'P2025') {
-      shoppingList = await db.list.create({
-        data: {
-          userId: request.userId
-        },
-        ...listWithItems
-      })
-    }
-  }
+    ...listWithItems
+  })
 
   void reply.send(shoppingList)
 }

@@ -4,6 +4,8 @@ import { beforeEach, describe, expect, test } from 'vitest'
 import shoppingListRoutes from '~/api/components/shoppingList/shoppingList.routes'
 import { db } from '~/api/db'
 import { listWithItems } from '../shoppingList.service'
+import listFixture from './fixtures/list-fixture.json'
+import userFixture from './fixtures/user-fixture.json'
 
 describe('shoping-list', () => {
   beforeEach(({ app }) => {
@@ -12,7 +14,6 @@ describe('shoping-list', () => {
   describe('create', () => {
     describe('create a list for a new user ', () => {
       test('list of shopping is returned', async ({ app, getToken }) => {
-        expect(await db.user.count()).toBe(0)
         const response = await app.inject({
           method: 'GET',
           url: '/',
@@ -35,7 +36,6 @@ describe('shoping-list', () => {
             items: []
           }
         )
-        expect(await db.user.count()).toBe(1)
       })
     })
 
@@ -45,24 +45,12 @@ describe('shoping-list', () => {
       }
       beforeEach<LocalTestContext>(async (ctx) => {
         const user = await db.user.create({
-          data: {
-            email: 'testuser@example.com'
-          }
+          data: userFixture
         })
         ctx.userId = user.id
       })
 
       test<LocalTestContext>('list of shopping is returned', async ({ app, getToken, userId }) => {
-        expect(await db.user.count()).toBe(1)
-
-        expect(
-          await db.list.count({
-            where: {
-              userId
-            }
-          })
-        ).toBe(0)
-
         const response = await app.inject({
           method: 'GET',
           url: '/',
@@ -97,28 +85,25 @@ describe('shoping-list', () => {
   describe('update', () => {
     interface LocalTestContext {
       shoppingListId: string
+      shoppingList: Prisma.ListGetPayload<typeof listWithItems>
     }
     beforeEach<LocalTestContext>(async (ctx) => {
-      const user = await db.user.create({
-        data: {
-          email: 'testuser@example.com'
-        }
+      await db.user.create({
+        data: userFixture
       })
+
       const shoppingList = await db.list.create({
-        data: {
-          userId: user.id
-        },
-        select: {
-          id: true
-        }
+        data: listFixture,
+        ...listWithItems
       })
       ctx.shoppingListId = shoppingList.id
+      ctx.shoppingList = shoppingList
     })
 
     test<LocalTestContext>('returns 403 if permission are incorrect', async ({ app, getToken, shoppingListId }) => {
       const response = await app.inject({
         method: 'POST',
-        url: `/${shoppingListId}`,
+        url: '/',
         headers: {
           authorization: `Bearer ${getToken(['update:shopping-list'])}`
         },
@@ -147,36 +132,38 @@ describe('shoping-list', () => {
         {
           id: list.id,
           createdAt: list.createdAt,
-          items: []
+          items: listFixture.items.create
         }
       )
 
       const response = await app.inject({
         method: 'POST',
-        url: `/${shoppingListId}`,
+        url: '/',
         headers: {
           authorization: `Bearer ${getToken(['read:shopping-list', 'update:shopping-list'])}`
         },
         payload: {
           items: [{
-            item: 'Bread'
+            item: 'New Item 1'
           }, {
-            item: 'Milk'
+            item: 'New Item 2'
           }]
         }
       })
+
       expect(response.json()).toMatchObject(
         {
           id: list.id,
           createdAt: list.createdAt.toISOString(),
           items: [
+            ...listFixture.items.create,
             {
-              item: 'Bread',
-              order: 1
+              item: 'New Item 1',
+              order: 4
             },
             {
-              item: 'Milk',
-              order: 2
+              item: 'New Item 2',
+              order: 5
             }
           ]
         }
@@ -184,45 +171,11 @@ describe('shoping-list', () => {
     })
 
     describe('update list item', () => {
-      interface LocalTestContext {
-        shoppingListId: string
-        shoppingList: Prisma.ListGetPayload<typeof listWithItems>
-      }
-      beforeEach<LocalTestContext>(async (ctx) => {
-        const shoppingList = await db.list.update({
-          where: {
-            id: ctx.shoppingListId
-          },
-          data: {
-            items: {
-              createMany: {
-                data: [
-                  {
-                    item: 'Bread',
-                    order: 1
-                  },
-                  {
-                    item: 'Milk',
-                    order: 2
-                  },
-                  {
-                    item: 'Rice',
-                    order: 3
-                  }
-                ]
-              }
-            }
-          },
-          ...listWithItems
-        })
-        ctx.shoppingList = shoppingList
-      })
-
       test<LocalTestContext>('returns 403 if permission are incorrect', async ({ app, getToken, shoppingList }) => {
         const breadItem = shoppingList.items[0]
         const response = await app.inject({
           method: 'PUT',
-          url: `/${shoppingList.id}`,
+          url: '/',
           headers: {
             authorization: `Bearer ${getToken(['update:shopping-list'])}`
           },
@@ -241,7 +194,7 @@ describe('shoping-list', () => {
         const breadItem = shoppingList.items[0]
         const response = await app.inject({
           method: 'PUT',
-          url: `/${shoppingList.id}`,
+          url: '/',
           headers: {
             authorization: `Bearer ${getToken(['read:shopping-list', 'update:shopping-list'])}`
           },
@@ -280,7 +233,7 @@ describe('shoping-list', () => {
           const riceItem = shoppingList.items[2]
           const response = await app.inject({
             method: 'PUT',
-            url: `/${shoppingList.id}`,
+            url: '/',
             headers: {
               authorization: `Bearer ${getToken(['read:shopping-list', 'update:shopping-list'])}`
             },
@@ -317,7 +270,7 @@ describe('shoping-list', () => {
           const breadItem = shoppingList.items[0]
           const response = await app.inject({
             method: 'PUT',
-            url: `/${shoppingList.id}`,
+            url: '/',
             headers: {
               authorization: `Bearer ${getToken(['read:shopping-list', 'update:shopping-list'])}`
             },
@@ -354,7 +307,7 @@ describe('shoping-list', () => {
           const breadItem = shoppingList.items[0]
           const response = await app.inject({
             method: 'PUT',
-            url: `/${shoppingList.id}`,
+            url: '/',
             headers: {
               authorization: `Bearer ${getToken(['read:shopping-list', 'update:shopping-list'])}`
             },
@@ -388,6 +341,50 @@ describe('shoping-list', () => {
           )
         })
       })
+    })
+  })
+  describe('removing an item', () => {
+    interface LocalTestContext {
+      shoppingListId: string
+      shoppingList: Prisma.ListGetPayload<typeof listWithItems>
+    }
+    beforeEach<LocalTestContext>(async (ctx) => {
+      await db.user.create({
+        data: userFixture
+      })
+      const shoppingList = await db.list.create({
+        data: listFixture,
+        ...listWithItems
+      })
+      ctx.shoppingListId = shoppingList.id
+      ctx.shoppingList = shoppingList
+    })
+    test<LocalTestContext>('item is removed', async ({ app, getToken, shoppingList }) => {
+      const milkItem = shoppingList.items[1]
+      const expectedList = [shoppingList.items[0], shoppingList.items[2]]
+      const response = await app.inject({
+        method: 'DELETE',
+        url: `/item/${milkItem.id}`,
+        headers: {
+          authorization: `Bearer ${getToken(['update:shopping-list'])}`
+        }
+      })
+      expect(response.statusCode).toBe(204)
+
+      expect(
+        await db.list.findFirstOrThrow({
+          where: {
+            id: shoppingList.id
+          },
+          ...listWithItems
+        })
+      ).toMatchObject(
+        {
+          id: shoppingList.id,
+          createdAt: shoppingList.createdAt,
+          items: expectedList
+        }
+      )
     })
   })
 })
