@@ -1,9 +1,9 @@
 import { createSigner } from 'fast-jwt'
 import nock from 'nock'
 import { createPublicKey, generateKeyPairSync } from 'node:crypto'
-import { beforeEach } from 'vitest'
+import { beforeEach, vi } from 'vitest'
 import buildApp from '~/api/app'
-import { db } from '~/api/db'
+import { db } from './setupPrismaClient'
 
 const { privateKey, publicKey } = generateKeyPairSync('rsa', {
   modulusLength: 2048,
@@ -41,7 +41,9 @@ nock('https://auth')
       kid: '0'
     }]
   })
-
+vi.mock('~/api/db', async () => {
+  return await vi.importActual('./setupPrismaClient')
+})
 beforeEach(async (ctx) => {
   await db.$queryRawUnsafe('TRUNCATE TABLE "User" CASCADE')
   ctx.getToken = (scope: string[] = []) => {

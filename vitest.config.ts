@@ -8,6 +8,6 @@ export default defineConfig({
       provider: 'c8'
     },
     setupFiles: ['./src/tests/helpers/setupTestFixtures', './src/tests/helpers/setupPrismaClient'],
-    threads: false
+    singleThread: true
   }
 })

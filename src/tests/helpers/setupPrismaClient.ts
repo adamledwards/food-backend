@@ -2,7 +2,7 @@ import { PrismaClient } from '@prisma/client'
 import { getTestConnection } from './getTestConnection'
 
 const { connectionString } = getTestConnection()
-global._db = new PrismaClient({
+export const db = new PrismaClient({
   datasources: {
     db: { url: connectionString }
   }
