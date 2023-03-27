@@ -12,7 +12,8 @@ export const listWithItems = Prisma.validator<Prisma.ListArgs>()({
       select: {
         id: true,
         order: true,
-        item: true
+        item: true,
+        checked: true
       }
     }
   }

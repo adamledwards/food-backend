@@ -47,7 +47,7 @@ export async function postShoppingList(
     data: {
       items: {
         createMany: {
-          data: jsonBody.items.map(({ item }, i) => ({ item, order: max + i + 1 }))
+          data: jsonBody.items.map(({ item, checked }, i) => ({ item, order: max + i + 1, checked }))
         }
       }
     },

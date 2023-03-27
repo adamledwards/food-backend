@@ -40,17 +40,13 @@ describe('shoping-list', () => {
     })
 
     describe('create a list for a existing user ', () => {
-      interface LocalTestContext {
-        userId: string
-      }
-      beforeEach<LocalTestContext>(async (ctx) => {
-        const user = await db.user.create({
+      beforeEach(async (ctx) => {
+        await db.user.create({
           data: userFixture
         })
-        ctx.userId = user.id
       })
 
-      test<LocalTestContext>('list of shopping is returned', async ({ app, getToken, userId }) => {
+      test('list of shopping is returned', async ({ app, getToken }) => {
         const response = await app.inject({
           method: 'GET',
           url: '/',
@@ -62,7 +58,7 @@ describe('shoping-list', () => {
         expect(response.statusCode).toBe(200)
         const user = await db.user.findFirstOrThrow({
           where: {
-            id: userId
+            id: userFixture.id
           },
           include: {
             list: true
@@ -84,7 +80,6 @@ describe('shoping-list', () => {
 
   describe('update', () => {
     interface LocalTestContext {
-      shoppingListId: string
       shoppingList: Prisma.ListGetPayload<typeof listWithItems>
     }
     beforeEach<LocalTestContext>(async (ctx) => {
@@ -96,11 +91,10 @@ describe('shoping-list', () => {
         data: listFixture,
         ...listWithItems
       })
-      ctx.shoppingListId = shoppingList.id
       ctx.shoppingList = shoppingList
     })
 
-    test<LocalTestContext>('returns 403 if permission are incorrect', async ({ app, getToken, shoppingListId }) => {
+    test<LocalTestContext>('returns 403 if permission are incorrect', async ({ app, getToken }) => {
       const response = await app.inject({
         method: 'POST',
         url: '/',
@@ -118,24 +112,7 @@ describe('shoping-list', () => {
       expect(response.statusCode).toBe(403)
     })
 
-    test<LocalTestContext>('add an item to the list', async ({ app, getToken, shoppingListId }) => {
-      const list = await db.list.findUniqueOrThrow({
-        where: {
-          id: shoppingListId
-        },
-        include: {
-          items: true
-        }
-      })
-
-      expect(list).toMatchObject(
-        {
-          id: list.id,
-          createdAt: list.createdAt,
-          items: listFixture.items.create
-        }
-      )
-
+    test<LocalTestContext>('add an item to the list', async ({ app, getToken, shoppingList }) => {
       const response = await app.inject({
         method: 'POST',
         url: '/',
@@ -153,17 +130,57 @@ describe('shoping-list', () => {
 
       expect(response.json()).toMatchObject(
         {
-          id: list.id,
-          createdAt: list.createdAt.toISOString(),
+          id: shoppingList.id,
+          createdAt: shoppingList.createdAt.toISOString(),
           items: [
             ...listFixture.items.create,
             {
               item: 'New Item 1',
-              order: 4
+              order: 4,
+              checked: false
             },
             {
               item: 'New Item 2',
-              order: 5
+              order: 5,
+              checked: false
+            }
+          ]
+        }
+      )
+    })
+
+    test<LocalTestContext>('add a checked item to the list', async ({ app, getToken, shoppingList }) => {
+      const response = await app.inject({
+        method: 'POST',
+        url: '/',
+        headers: {
+          authorization: `Bearer ${getToken(['read:shopping-list', 'update:shopping-list'])}`
+        },
+        payload: {
+          items: [{
+            item: 'New Item 1'
+          }, {
+            item: 'New Item 2',
+            checked: true
+          }]
+        }
+      })
+
+      expect(response.json()).toMatchObject(
+        {
+          id: shoppingList.id,
+          createdAt: shoppingList.createdAt.toISOString(),
+          items: [
+            ...listFixture.items.create,
+            {
+              item: 'New Item 1',
+              order: 4,
+              checked: false
+            },
+            {
+              item: 'New Item 2',
+              order: 5,
+              checked: true
             }
           ]
         }
@@ -222,6 +239,47 @@ describe('shoping-list', () => {
               {
                 item: 'Rice',
                 order: 3
+              }
+            ]
+          }
+        )
+      })
+
+      test<LocalTestContext>('updates checked status on a item', async ({ app, getToken, shoppingList }) => {
+        const breadItem = shoppingList.items[0]
+        const response = await app.inject({
+          method: 'PUT',
+          url: '/',
+          headers: {
+            authorization: `Bearer ${getToken(['read:shopping-list', 'update:shopping-list'])}`
+          },
+          payload: {
+            id: breadItem.id,
+            data: {
+              checked: true
+            }
+          }
+        })
+
+        expect(response.json()).toMatchObject(
+          {
+            id: shoppingList.id,
+            createdAt: shoppingList.createdAt.toISOString(),
+            items: [
+              {
+                item: 'Bread',
+                order: 1,
+                checked: true
+              },
+              {
+                item: 'Milk',
+                order: 2,
+                checked: false
+              },
+              {
+                item: 'Rice',
+                order: 3,
+                checked: false
               }
             ]
           }

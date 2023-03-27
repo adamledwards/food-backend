@@ -28,7 +28,8 @@ export async function putShoppingList(
   reply: FastifyReplyWithPayload<ShoppingListPutRouteOptions>
 ): Promise<void> {
   const shoppingListId = await findOrCreateShoppingList(request.userId)
-  const { id, data: { item, order } } = request.body
+  const { id, data: { item, order, checked } } = request.body
+
   const list = await db.list.findFirstOrThrow({
     where: {
       id: shoppingListId
@@ -58,7 +59,8 @@ export async function putShoppingList(
       },
       data: {
         item,
-        order
+        order,
+        checked
       }
     })
 
