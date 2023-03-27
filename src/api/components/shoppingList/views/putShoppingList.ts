@@ -29,7 +29,6 @@ export async function putShoppingList(
 ): Promise<void> {
   const shoppingListId = await findOrCreateShoppingList(request.userId)
   const { id, data: { item, order } } = request.body
-
   const list = await db.list.findFirstOrThrow({
     where: {
       id: shoppingListId
