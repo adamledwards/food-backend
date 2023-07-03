@@ -44,7 +44,7 @@
     "eslint-plugin-promise": "^6.1.1",
     "husky": "^8.0.3",
     "jose": "^4.13.1",
-    "lint-staged": "^13.1.2",
+    "lint-staged": "^13.2.3",
     "nock": "^13.3.0",
     "nodemon": "^2.0.21",
     "pg": "^8.10.0",
